@@ -17,10 +17,6 @@ module OmniAuth
         token_url:     'oauth/token'
       }
 
-      option :token_params, {
-        :parse => :query
-      }
-
       option :authorize_options, [:scope, :display]
 
       uid { raw_info['id'] }
@@ -109,7 +105,7 @@ module OmniAuth
             options.provider_ignores_state = original_provider_ignores_state
           end
         else
-          raise NoAuthorizationCodeError, 'must pass either a `code` (via URL or by an `fbsr_XXX` signed request cookie)'
+          raise NoAuthorizationCodeError, 'must pass either a `code` (via URL or by an `tsr_XXX` signed request cookie)'
         end
       end
 
