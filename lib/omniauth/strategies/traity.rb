@@ -31,7 +31,7 @@ module OmniAuth
           'cover_picture' => raw_info['cover_picture'],
           'gender' => raw_info['gender'],
           'location' => raw_info['location'],
-          'reputation' => raw_info['reputation'],
+          'reputation' => (raw_info['reputation'] || 0),
           'email_verified' => (raw_info['verified'] || {}).has_key?('email')
         })
       end

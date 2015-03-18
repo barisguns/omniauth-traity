@@ -81,3 +81,92 @@ class UidTest < StrategyTestCase
     assert_equal '123', strategy.uid
   end
 end
+
+
+class InfoTestOptionalDataPresent < StrategyTestCase
+  def setup
+    super
+    @raw_info ||= { 'name' => 'Sergio Leone' }
+    strategy.stubs(:raw_info).returns(@raw_info)
+  end
+
+  test 'returns the name' do
+    assert_equal 'Sergio Leone', strategy.info['name']
+  end
+
+  test 'returns the email' do
+    @raw_info['email'] = 'sergio@leone.com'
+    assert_equal 'sergio@leone.com', strategy.info['email']
+  end
+
+  test 'returns the bio' do
+    @raw_info['bio'] = 'Amazing western director'
+    assert_equal 'Amazing western director', strategy.info['bio']
+  end
+
+  test 'returns the traity avatar url' do
+    @raw_info['picture'] = 'http://assets.com/userimage'
+    assert_equal 'http://assets.com/userimage', strategy.info['picture']
+  end
+
+  test 'returns the traity cover picture' do
+    @raw_info['cover_picture'] = 'http://assets.com/coverpicture'
+    assert_equal 'http://assets.com/coverpicture', strategy.info['cover_picture']
+  end
+
+  test 'returns the gender' do
+    @raw_info['gender'] = 'Male'
+    assert_equal 'Male', strategy.info['gender']
+  end
+
+  test 'returns the location as location' do
+    @raw_info['location'] = "Italy"
+    assert_equal "Italy", strategy.info['location']
+  end
+
+  test 'returns the reputation' do
+    @raw_info['reputation'] = 4.3
+    assert_equal 4.3, strategy.info['reputation']
+  end
+
+  test 'returns true if the email is verified' do
+    @raw_info['verified'] = { 'email' => Time.now }
+    assert_equal true, strategy.info['email_verified']
+  end
+end
+
+class InfoTestOptionalDataNotPresent < StrategyTestCase
+  def setup
+    super
+    @raw_info ||= { 'name' => 'Sergio Leone' }
+    strategy.stubs(:raw_info).returns(@raw_info)
+  end
+
+  test 'has no bio key' do
+    refute_has_key 'bio', strategy.info
+  end
+
+  test 'has no picture key' do
+    refute_has_key 'picture', strategy.info
+  end
+
+  test 'has no cover_picture key' do
+    refute_has_key 'cover_picture', strategy.info
+  end
+
+  test 'has no gender key' do
+    refute_has_key 'gender', strategy.info
+  end
+
+  test 'has no location key' do
+    refute_has_key 'location', strategy.info
+  end
+
+  test 'has no reputation' do
+    assert_equal 0, strategy.info['reputation']
+  end
+
+  test 'has email verified as false' do
+    assert_equal false, strategy.info['email_verified']
+  end
+end
