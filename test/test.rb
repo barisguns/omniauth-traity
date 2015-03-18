@@ -1,5 +1,7 @@
 require 'helper'
 require 'omniauth-traity'
+require 'openssl'
+require 'base64'
 
 
 class StrategyTest < StrategyTestCase
@@ -271,5 +273,95 @@ class CredentialsTest < StrategyTestCase
     @access_token.stubs(:refresh_token).returns('XXX')
     assert_nil strategy.credentials['refresh_token']
     refute_has_key 'refresh_token', strategy.credentials
+  end
+end
+
+module SignedRequestHelpers
+  def signed_request(payload, secret)
+    encoded_payload   = base64_encode_url(MultiJson.encode(payload))
+    encoded_signature = base64_encode_url(signature(encoded_payload, secret))
+    [encoded_signature, encoded_payload].join('.')
+  end
+
+  def base64_encode_url(value)
+    Base64.encode64(value).tr('+/', '-_').gsub(/\n/, '')
+  end
+
+  def signature(payload, secret)
+    Digest::SHA256.hexdigest("#{payload}-#{secret}")
+  end
+end
+
+module SignedRequestTests
+  class TestCase < StrategyTestCase
+    include SignedRequestHelpers
+  end
+
+  class CookieAndParamNotPresentTest < TestCase
+    test 'is nil' do
+      assert_nil strategy.send(:signed_request_from_cookie)
+    end
+
+    test 'throws an error on calling build_access_token' do
+      assert_raises(OmniAuth::Strategies::Traity::NoAuthorizationCodeError) { strategy.send(:with_authorization_code!) {} }
+    end
+  end
+
+  class CookiePresentTest < TestCase
+    def setup(algo = nil)
+      super()
+      @payload = {
+        'code' => 'm4c0d3z',
+        'issued_at' => Time.now.to_i,
+        'user_id' => '123456'
+      }
+
+      @request.stubs(:cookies).returns({"tsr_#{@client_id}" => signed_request(@payload, @client_secret)})
+    end
+
+    test 'parses the access code out from the cookie' do
+      assert_equal @payload, strategy.send(:signed_request_from_cookie)
+    end
+  end
+
+  class EmptySignedRequestTest < TestCase
+    def setup
+      super
+      @request.stubs(:params).returns({'signed_request' => ''})
+    end
+
+    test 'empty param' do
+      assert_equal nil, strategy.send(:signed_request_from_cookie)
+    end
+  end
+
+  class MissingCodeInParamsRequestTest < TestCase
+    def setup
+      super
+      @request.stubs(:params).returns({})
+    end
+
+    test 'calls fail! when a code is not included in the params' do
+      strategy.expects(:fail!).times(1).with(:no_authorization_code, kind_of(OmniAuth::Strategies::Traity::NoAuthorizationCodeError))
+      strategy.callback_phase
+    end
+  end
+
+  class MissingCodeInCookieRequestTest < TestCase
+    def setup(algo = nil)
+      super()
+      @payload = {
+        'code' => nil,
+        'issued_at' => Time.now.to_i,
+        'user_id' => '123456'
+      }
+
+      @request.stubs(:cookies).returns({"tsr_#{@client_id}" => signed_request(@payload, @client_secret)})
+    end
+
+    test 'calls fail! when a code is not included in the cookie' do
+      strategy.expects(:fail!).times(1).with(:no_authorization_code, kind_of(OmniAuth::Strategies::Traity::NoAuthorizationCodeError))
+      strategy.callback_phase
+    end
   end
 end
