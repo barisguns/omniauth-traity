@@ -1,6 +1,5 @@
 require 'helper'
 require 'omniauth-traity'
-require 'openssl'
 require 'base64'
 
 
