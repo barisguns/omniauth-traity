@@ -1,4 +1,6 @@
 require 'omniauth/strategies/oauth2'
+require 'base64'
+require 'openssl'
 
 module OmniAuth
   module Strategies
@@ -53,7 +55,13 @@ module OmniAuth
       end
 
       def raw_info
-        @raw_info ||= access_token.get('1.0/me').parsed || {}
+        @raw_info ||= access_token.get('1.0/me', info_options).parsed || {}
+      end
+
+      def info_options
+        params = {:appsecret_proof => appsecret_proof}
+        params.merge!({:locale => options[:locale]}) if options[:locale]
+        { :params => params }
       end
 
       def prune!(hash)
@@ -61,6 +69,10 @@ module OmniAuth
           prune!(value) if value.is_a?(Hash)
           value.nil? || (value.respond_to?(:empty?) && value.empty?)
         end
+      end
+
+      def appsecret_proof
+        @appsecret_proof ||= OpenSSL::HMAC.hexdigest(OpenSSL::Digest::SHA256.new, client.secret, access_token.token)
       end
     end
   end

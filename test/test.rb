@@ -170,3 +170,53 @@ class InfoTestOptionalDataNotPresent < StrategyTestCase
     assert_equal false, strategy.info['email_verified']
   end
 end
+
+class RawInfoTest < StrategyTestCase
+  def setup
+    super
+    @access_token = stub('OAuth2::AccessToken')
+    @appsecret_proof = 'appsecret_proof'
+    @options = {:appsecret_proof => @appsecret_proof}
+  end
+
+  test 'performs a GET to https://api.traity.com/1.0/me' do
+    strategy.stubs(:appsecret_proof).returns(@appsecret_proof)
+    strategy.stubs(:access_token).returns(@access_token)
+    params = {:params => @options}
+    @access_token.expects(:get).with('1.0/me', params).returns(stub_everything('OAuth2::Response'))
+    strategy.raw_info
+  end
+
+  test 'performs a GET to https://api.traity.com/1.0/me with locale' do
+    @options.merge!({ :locale => 'cs_CZ' })
+    strategy.stubs(:access_token).returns(@access_token)
+    strategy.stubs(:appsecret_proof).returns(@appsecret_proof)
+    params = {:params => @options}
+    @access_token.expects(:get).with('1.0/me', params).returns(stub_everything('OAuth2::Response'))
+    strategy.raw_info
+  end
+
+  test 'returns a Hash' do
+    strategy.stubs(:access_token).returns(@access_token)
+    strategy.stubs(:appsecret_proof).returns(@appsecret_proof)
+    raw_response = stub('Faraday::Response')
+    raw_response.stubs(:body).returns('{ "ohai": "thar" }')
+    raw_response.stubs(:status).returns(200)
+    raw_response.stubs(:headers).returns({'Content-Type' => 'application/json' })
+    oauth2_response = OAuth2::Response.new(raw_response)
+    params = {:params => @options}
+    @access_token.stubs(:get).with('1.0/me', params).returns(oauth2_response)
+    assert_kind_of Hash, strategy.raw_info
+    assert_equal 'thar', strategy.raw_info['ohai']
+  end
+
+  test 'returns an empty hash when the response is false' do
+    strategy.stubs(:access_token).returns(@access_token)
+    strategy.stubs(:appsecret_proof).returns(@appsecret_proof)
+    oauth2_response = stub('OAuth2::Response', :parsed => false)
+    params = {:params => @options}
+    @access_token.stubs(:get).with('1.0/me', params).returns(oauth2_response)
+    assert_kind_of Hash, strategy.raw_info
+    assert_equal({}, strategy.raw_info)
+  end
+end
