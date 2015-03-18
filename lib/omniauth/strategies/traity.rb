@@ -1,9 +1,10 @@
-require 'omniauth'
-require 'pp'
+require 'omniauth/strategies/oauth2'
 
 module OmniAuth
   module Strategies
     class Traity < OmniAuth::Strategies::OAuth2
+      DEFAULT_SCOPE = 'email'
+
       option :fields, [:name, :email]
       option :uid_field, :id
 
@@ -12,6 +13,12 @@ module OmniAuth
         authorize_url: 'https://traity.com/oauth/dialog',
         token_url:     'oauth/token'
       }
+
+      option :token_params, {
+        :parse => :query
+      }
+
+      option :authorize_options, [:scope, :display]
 
       uid { raw_info['id'] }
 
@@ -27,6 +34,22 @@ module OmniAuth
           'reputation' => raw_info['reputation'],
           'email_verified' => (raw_info['verified'] || {}).has_key?('email')
         })
+      end
+
+      def callback_url
+        options[:callback_url] || super
+      end
+
+      def authorize_params
+        super.tap do |params|
+          %w[display scope].each do |v|
+            if request.params[v]
+              params[v.to_sym] = request.params[v]
+            end
+          end
+
+          params[:scope] ||= DEFAULT_SCOPE
+        end
       end
 
       def raw_info
