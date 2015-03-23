@@ -16,7 +16,7 @@ And then execute `bundle install`.
 
 `OmniAuth::Strategies::Traity` is a Rack middleware and plays under the rules of OmniAuth so you can read the detailed documentation about it: https://github.com/intridea/omniauth.
 
-The configuration in Ruby on Rails can be placed at `config/initializers/omniauth.rb` and look like:
+The configuration in Ruby on Rails can be placed at `config/initializers/omniauth.rb` and looks like:
 
 ```ruby
 Rails.application.config.middleware.use OmniAuth::Builder do
