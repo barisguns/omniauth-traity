@@ -1,4 +1,4 @@
-# Omniauth Traity
+# Omniauth Traity [![Build Status](https://travis-ci.org/traity/omniauth-traity.svg?branch=master)](https://travis-ci.org/traity/omniauth-traity)
 
 Traity Oauth2 Strategy for OmniAuth. Supports the OAuth 2.0 server side and client side flows. You can read Traity for Startups [documentation](https://startups.traity.com/documentation/verification) for more details about implementation.
 
